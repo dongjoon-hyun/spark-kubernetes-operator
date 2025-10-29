@@ -1,0 +1,48 @@
+image:
+  repository: apache/celeborn
+  tag: "0.6.1"
+
+serviceAccount:
+  create: false
+  name: ""
+
+rbac:
+  create: true
+  roleName: default
+  roleBindingName: default
+  rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "list", "delete"]
+
+service:
+  type: ClusterIP
+  port: 9097
+
+celeborn:
+  celeborn.worker.http.port: 9096
+
+cluster:
+  name: cluster
+
+master:
+  replicas: 1
+  priorityClass:
+    create: false
+  env:
+  - name: CELEBORN_NO_DAEMONIZE
+    value: "true"
+
+worker:
+  replicas: 2
+  priorityClass:
+    create: false
+  env:
+  - name: CELEBORN_NO_DAEMONIZE
+    value: "true"
+
+podMonitor:
+  enable: false
+
+additionalNodePortServicePerReplica:
+  enabled: false
