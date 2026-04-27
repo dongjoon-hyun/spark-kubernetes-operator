@@ -32,6 +32,7 @@
  | spark.kubernetes.operator.metrics.sanitizePrometheusMetricsNameEnabled | Boolean | true | false | Whether or not to enable automatic name sanitizing for all metrics based on best-practice guide from Prometheus https://prometheus.io/docs/practices/naming/ | 
  | spark.kubernetes.operator.name | String | spark-kubernetes-operator | false | Name of the operator. | 
  | spark.kubernetes.operator.namespace | String | default | false | Namespace that operator is deployed within. | 
+ | spark.kubernetes.operator.periodicGC.intervalSeconds | Long | 1800 | true | Interval (in seconds) between periodic System.gc() invocations. Set to 0 or a negative value to disable. Note that System.gc() is a no-op if JVM is started with -XX:+DisableExplicitGC. | 
  | spark.kubernetes.operator.reconciler.appStatusListenerClassNames | String |  | false | Comma-separated names of SparkAppStatusListener class implementations | 
  | spark.kubernetes.operator.reconciler.clusterStatusListenerClassNames | String |  | false | Comma-separated names of SparkClusterStatusListener class implementations | 
  | spark.kubernetes.operator.reconciler.foregroundRequestTimeoutSeconds | Long | 60 | true | Timeout (in seconds) for requests made to API server. This applies only to foreground requests. | 

@@ -40,6 +40,21 @@ public final class SparkOperatorConf {
           .defaultValue(false)
           .build();
 
+  /**
+   * Interval (in seconds) between periodic System.gc() invocations. Set to 0 or a negative value
+   * to disable.
+   */
+  public static final ConfigOption<Long> PERIODIC_GC_INTERVAL_SECONDS =
+      ConfigOption.<Long>builder()
+          .key("spark.kubernetes.operator.periodicGC.intervalSeconds")
+          .description(
+              "Interval (in seconds) between periodic System.gc() invocations. "
+                  + "Set to 0 or a negative value to disable. Note that System.gc() is a no-op "
+                  + "if JVM is started with -XX:+DisableExplicitGC.")
+          .typeParameterClass(Long.class)
+          .defaultValue(1800L)
+          .build();
+
   /** Name of the operator. */
   public static final ConfigOption<String> OPERATOR_APP_NAME =
       ConfigOption.<String>builder()
