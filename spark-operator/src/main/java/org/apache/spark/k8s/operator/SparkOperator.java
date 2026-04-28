@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.http.Interceptor;
@@ -79,6 +81,7 @@ public class SparkOperator {
   private final ProbeService probeService;
   private final MetricsService metricsService;
   private final ExecutorService metricsResourcesSingleThreadPool;
+  private final ScheduledExecutorService periodicGcScheduler;
 
   /** Constructs a new SparkOperator, initializing all its components. */
   public SparkOperator() {
@@ -113,6 +116,42 @@ public class SparkOperator {
             Arrays.asList(sparkApplicationSentinelManager, sparkClusterSentinelManager),
             null);
     this.metricsService = new MetricsService(metricsSystem, metricsResourcesSingleThreadPool);
+    long periodicGcIntervalSeconds = SparkOperatorConf.PERIODIC_GC_INTERVAL_SECONDS.getValue();
+    if (periodicGcIntervalSeconds > 0L) {
+      this.periodicGcScheduler =
+          Executors.newSingleThreadScheduledExecutor(
+              r -> {
+                Thread t = new Thread(r, "spark-operator-periodic-gc");
+                t.setDaemon(true);
+                return t;
+              });
+      this.periodicGcScheduler.scheduleAtFixedRate(
+          SparkOperator::runSystemGc,
+          periodicGcIntervalSeconds,
+          periodicGcIntervalSeconds,
+          TimeUnit.SECONDS);
+      log.info("Periodic System.gc() enabled with interval {}s", periodicGcIntervalSeconds);
+    } else {
+      this.periodicGcScheduler = null;
+    }
+  }
+
+  static void runSystemGc() {
+    Runtime runtime = Runtime.getRuntime();
+    long beforeUsedMb = (runtime.totalMemory() - runtime.freeMemory()) >> 20;
+    long beforeTotalMb = runtime.totalMemory() >> 20;
+    long startNanos = System.nanoTime();
+    System.gc();
+    long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000L;
+    long afterUsedMb = (runtime.totalMemory() - runtime.freeMemory()) >> 20;
+    long afterTotalMb = runtime.totalMemory() >> 20;
+    log.info(
+        "System.gc() finished in {} ms. used: {} MB -> {} MB, total: {} MB -> {} MB",
+        elapsedMs,
+        beforeUsedMb,
+        afterUsedMb,
+        beforeTotalMb,
+        afterTotalMb);
   }
 
   /**
